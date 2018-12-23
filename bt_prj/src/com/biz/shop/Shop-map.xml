@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--  
+<mapper namespace="userNameSpace"> 
+<mapper namespace="com.biz.mapper.UserMap">
+-->
+<mapper namespace="userNameSpace">
+   <resultMap id="shopMap" type="com.biz.member.ShopVO">
+      <id     property="shopSeq"        column="sseq" />
+      <result property="shopName"       column="sname" />
+      <result property="shopInfo"       column="sinfo" />
+      <result property="shopLat"        column="lat" />
+      <result property="shopLng"        column="lng" />
+      <result property="shopRegid"      column="regid" />
+      <result property="shopRegdate"    column="regdate" />
+      <result property="shopPlacename"  column="placename" />
+      
+      <result property="shopPseq"       column="pseq" />
+      <result property="shopPath"       column="ppath" />
+      <result property="shopPname"      column="pname" />
+   </resultMap>
+   
+    <resultMap id="shoppicMap" type="com.biz.member.ShopPicVO">
+      <id     property="shoppSeq"        column="pseq" />
+      <result property="shoppPath"       column="ppath" />
+      <result property="shoppPname"      column="pname" />
+      <result property="shoppSysname"    column="sysname" />
+      <result property="shopsSeq"        column="sseq" />
+      <result property="shoppPyn"        column="pyn" />
+    </resultMap>
+    
+   
+    <sql id="commonSelect"> sseq, sname , sinfo </sql>
+    
+    <select id="login" 
+                parameterType="com.biz.member.ShopVO" 
+                resultMap="shopMap">
+          select <include refid="commonSelect"  />
+          from member
+         where user_id=#{userId} and user_pw=#{userPw} 
+         and USER_DEL='n'
+    </select>
+    
+    <insert id="insertShopInfo_insert" 
+    parameterType="com.biz.member.ShopVO">
+    	insert into shop_info(sseq,sname,sinfo,lat,lng,regid,regdate,placename)
+		values(#{shopSeq}, #{shopName},#{shopInfo},#{shopLat},#{shopLng),#{shopRegid},'sysdate',#{shopPlacename})
+    </insert>
+    
+    <update id="insertShopPic_insert" parameterType="com.biz.member.ShopPicVO">
+         insert into shop_pic(pseq, ppath, pname,sseq,pyn)
+		 values(shop_pic_seq.nextval,#{shoppPath},#{shoppPname},${shopsSeq},#{shoppPyn})
+    </update>
+    
+    <update id="selectShopPic_select" parameterType="com.biz.member.ShopPicVO">
+         select pseq nvl(ppath,'c:/uploads') as ppath, nvl(pname, '000.png') as pname
+		 from shop_pic
+		 where sseq = #{shopsSeq} 
+		 order by pseq desc
+    </update>
+  
+    <select id="member_detail" parameterType="String" 
+              resultMap="memberMap">
+      select user_seq, user_id, user_name
+      ,user_email,user_gubun, ppath,pname, sysname
+      from member
+      where user_id=#{value} and USER_DEL='n'
+  </select>
+  
+  <select id="member_list" resultMap="memberMap">
+      select  user_seq,user_id,user_name,user_email,user_gubun, ppath,pname, sysname
+      from member
+      <where>
+         <if test="searchGubun != null">
+            where ${searchGubun} = #{searchStr}   <!-- 컬럼 자리 동적 바인딩은 $ // #은 값 -->
+         </if>
+      </where>
+      order by user_seq
+  </select>
+  
+  <select id="selectAll" resultMap="shop_pic_11" parameterType="com.biz.shop.ShopVO">
+   
+   <![CDATA[
+            select  t.* from(
+				select rownum t, a.* from 
+					(select i.sseq, i.sname, i.sinfo, i.lat, i.lng,
+                     nvl(p.ppath,'c:/uploads') as ppath,
+                     nvl(p.pname, '000.png') as pname,
+                     -- calc_distance(i.lat, i.lng, #{lat}, #{lng}) as distance
+          			  from shop_info i, shop_pic p
+            		where i.sseq = p.sseq(+)
+                     and p.pyn(+) = 'y'
+            order by sseq desc 
+            ) a 
+          ) b
+          where t between #{strtSeq} and #{endSeq};
+         ]]>
+   </select>
+  
+</mapper>   
